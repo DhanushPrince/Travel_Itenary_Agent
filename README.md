@@ -27,7 +27,7 @@ A FastAPI web application that generates personalized travel itineraries using A
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/travel-itinerary-generator.git
+git clone https://github.com/DhanushPrince/Travel_Itenary_Agent.git
 cd travel-itinerary-generator
 ```
 
