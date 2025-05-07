@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Travel Itinerary Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-2">AI Travel Itinerary Generator</h1>
+            <p class="text-lg text-gray-600">Plan your perfect trip with AI-powered recommendations</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Form Section -->
+            <div class="w-full lg:w-1/3 bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Tell us about your trip</h2>
+                
+                <form id="itineraryForm" class="space-y-6">
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                        <input type="text" id="location" name="location" 
+                            placeholder="e.g., Kyoto, Paris, Bali" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                            required>
+                    </div>
+                    
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Travel Category</label>
+                        <select id="category" name="category" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                            <option value="">Select a category</option>
+                            <option value="cultural">Cultural</option>
+                            <option value="historical">Historical</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="nature">Nature & Outdoors</option>
+                            <option value="food">Food & Culinary</option>
+                            <option value="religious">Religious & Spiritual</option>
+                            <option value="architectural">Architecture</option>
+                            <option value="beach">Beach & Relaxation</option>
+                            <option value="family">Family-friendly</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="days" class="block text-sm font-medium text-gray-700 mb-1">Trip Duration (days)</label>
+                        <input type="number" id="days" name="days" min="1" max="14" value="3" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                            required>
+                    </div>
+                    
+                    <div>
+                        <label for="interests" class="block text-sm font-medium text-gray-700 mb-1">Specific Interests (optional)</label>
+                        <div class="flex flex-wrap gap-2 mb-2" id="interestTags"></div>
+                        <div class="flex">
+                            <input type="text" id="interestInput" 
+                                placeholder="e.g., museums, hiking, shopping" 
+                                class="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" id="addInterestBtn" 
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                Add
+                            </button>
+                        </div>
+                        <input type="hidden" id="interests" name="interests" value="[]">
+                    </div>
+                    
+                    <div>
+                        <label for="budget" class="block text-sm font-medium text-gray-700 mb-1">Budget (optional)</label>
+                        <select id="budget" name="budget" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Select a budget</option>
+                            <option value="budget">Budget</option>
+                            <option value="medium">Medium</option>
+                            <option value="luxury">Luxury</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="generateBtn" 
+                        class="w-full bg-indigo-600 text-white px-6 py-3 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Generate Itinerary
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="w-full lg:w-2/3">
+                <div id="loadingSection" class="hidden flex flex-col items-center justify-center bg-white rounded-lg shadow-lg p-10 h-full">
+                    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-4"></div>
+                    <p class="text-xl text-gray-700">Generating your perfect itinerary...</p>
+                    <p class="text-sm text-gray-500 mt-3">This may take a minute or two. We're searching the web for the best recommendations!</p>
+                </div>
+                
+                <div id="resultsSection" class="hidden bg-white rounded-lg shadow-lg p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">Your Custom Itinerary</h2>
+                        <button id="printBtn" class="flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200">
+                            <i class="fas fa-print mr-2"></i> Print / Save PDF
+                        </button>
+                    </div>
+                    <div id="itineraryContent" class="prose max-w-none"></div>
+                </div>
+                
+                <div id="initialPrompt" class="bg-white rounded-lg shadow-lg p-8 text-center">
+                    <img src="/api/placeholder/400/300" alt="Travel illustration" class="mx-auto mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ready to plan your adventure?</h2>
+                    <p class="text-gray-600">Fill out the form with your destination and preferences, and our AI will create a personalized itinerary just for you.</p>
+                </div>
+                
+                <div id="errorSection" class="hidden bg-white rounded-lg shadow-lg p-8 text-center">
+                    <div class="text-red-500 text-5xl mb-4">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Oops! Something went wrong</h2>
+                    <p id="errorMessage" class="text-gray-600 mb-6">We encountered an error while generating your itinerary.</p>
+                    <button id="tryAgainBtn" class="px-6 py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white mt-12 py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 AI Travel Itinerary Generator. Powered by LLaMA and MCP.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Interest tags management
+            const interestInput = document.getElementById('interestInput');
+            const addInterestBtn = document.getElementById('addInterestBtn');
+            const interestTags = document.getElementById('interestTags');
+            const interestsHidden = document.getElementById('interests');
+            let interests = [];
+            
+            function updateInterestTags() {
+                interestTags.innerHTML = '';
+                interests.forEach((interest, index) => {
+                    const tag = document.createElement('div');
+                    tag.className = 'bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full flex items-center';
+                    tag.innerHTML = `
+                        <span>${interest}</span>
+                        <button type="button" data-index="${index}" class="ml-2 text-indigo-600 hover:text-indigo-800 focus:outline-none">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    `;
+                    interestTags.appendChild(tag);
+                    
+                    // Add event listener to remove button
+                    tag.querySelector('button').addEventListener('click', (e) => {
+                        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                        interests.splice(idx, 1);
+                        updateInterestTags();
+                        interestsHidden.value = JSON.stringify(interests);
+                    });
+                });
+            }
+            
+            addInterestBtn.addEventListener('click', () => {
+                const interest = interestInput.value.trim();
+                if (interest && !interests.includes(interest)) {
+                    interests.push(interest);
+                    interestInput.value = '';
+                    updateInterestTags();
+                    interestsHidden.value = JSON.stringify(interests);
+                }
+            });
+            
+            interestInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addInterestBtn.click();
+                }
+            });
+            
+            // Form submission
+            const itineraryForm = document.getElementById('itineraryForm');
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingSection = document.getElementById('loadingSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const initialPrompt = document.getElementById('initialPrompt');
+            const errorSection = document.getElementById('errorSection');
+            const itineraryContent = document.getElementById('itineraryContent');
+            const printBtn = document.getElementById('printBtn');
+            const tryAgainBtn = document.getElementById('tryAgainBtn');
+            
+            itineraryForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Show loading
+                initialPrompt.classList.add('hidden');
+                errorSection.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                loadingSection.classList.remove('hidden');
+                
+                // Disable generate button
+                generateBtn.disabled = true;
+                generateBtn.classList.add('bg-gray-400');
+                generateBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                
+                try {
+                    // Prepare form data
+                    const formData = {
+                        location: document.getElementById('location').value,
+                        category: document.getElementById('category').value,
+                        days: parseInt(document.getElementById('days').value),
+                        interests: interests.length > 0 ? interests : undefined,
+                        budget: document.getElementById('budget').value || undefined
+                    };
+                    
+                    // Send request to generate itinerary
+                    const response = await fetch('/generate-itinerary', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to initiate itinerary generation');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed') {
+                        // If we got an immediate response (cached)
+                        showResults(data.itinerary);
+                    } else if (data.status === 'processing') {
+                        // Poll for results
+                        await pollForResults(data.request_id);
+                    } else {
+                        throw new Error('Invalid response from server');
+                    }
+                } catch (error) {
+                    showError(error.message);
+                }
+            });
+            
+            async function pollForResults(requestId) {
+                try {
+                    let attempts = 0;
+                    const maxAttempts = 60; // Poll for up to 5 minutes (5s * 60)
+                    
+                    const pollInterval = setInterval(async () => {
+                        attempts++;
+                        
+                        if (attempts > maxAttempts) {
+                            clearInterval(pollInterval);
+                            showError('Request timed out. Please try again.');
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch(`/itinerary-status/${requestId}`);
+                            const data = await response.json();
+                            
+                            if (data.status === 'completed') {
+                                clearInterval(pollInterval);
+                                showResults(data.itinerary);
+                            } else if (data.status === 'error') {
+                                clearInterval(pollInterval);
+                                showError(data.message);
+                            }
+                            // Continue polling if still processing
+                        } catch (error) {
+                            console.error('Error polling for results:', error);
+                        }
+                    }, 5000); // Poll every 5 seconds
+                } catch (error) {
+                    showError(error.message);
+                }
+            }
+            
+            function showResults(itinerary) {
+                // Hide loading and show results
+                loadingSection.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+                
+                // Parse markdown to HTML
+                itineraryContent.innerHTML = marked.parse(itinerary);
+                
+                // Re-enable generate button
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('bg-gray-400');
+                generateBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+            
+            function showError(message) {
+                // Hide loading and show error
+                loadingSection.classList.add('hidden');
+                errorSection.classList.remove('hidden');
+                
+                // Set error message
+                document.getElementById('errorMessage').textContent = message;
+                
+                // Re-enable generate button
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('bg-gray-400');
+                generateBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+            
+            // Try again button
+            tryAgainBtn.addEventListener('click', () => {
+                errorSection.classList.add('hidden');
+                initialPrompt.classList.remove('hidden');
+            });
+            
+            // Print button
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+        });
+    </script>
+    
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #itineraryContent, #itineraryContent * {
+                visibility: visible;
+            }
+            #itineraryContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+        
+        /* Style for the markdown content */
+        .prose h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1e40af;
+        }
+        
+        .prose h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #1e3a8a;
+        }
+        
+        .prose h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: #2563eb;
+        }
+        
+        .prose p {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+        
+        .prose ul, .prose ol {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .prose ul li, .prose ol li {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .prose blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-right: 0;
+            font-style: italic;
+            color: #4b5563;
+        }
+        
+        .prose hr {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
